@@ -4,7 +4,6 @@
  */
 package mygame;
 
-import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.collision.shapes.HeightfieldCollisionShape;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.material.Material;
@@ -27,22 +26,18 @@ import com.jme3.terrain.noise.fractal.FractalSum;
 import com.jme3.terrain.noise.modulator.NoiseModulator;
 import com.jme3.texture.Texture;
 
-/**
- *
- * @author 2
- */
 public class Ground {
+
     private Main main;
     private Material mat_terrain;
-private TerrainGrid terrain;
-    
-    public Ground (Main main){
-    this.main = main;
-    initTerrain();
-    initPhysics();
+    private TerrainGrid terrain;
+
+    public Ground(Main main) {
+        this.main = main;
+        initTerrain();
+        initPhysics();
     }
-    
-    
+
     private void initTerrain() {
         mat_terrain = new Material(main.getAssetManager(), "Common/MatDefs/Terrain/HeightBasedTerrain.j3md");
 
@@ -100,12 +95,9 @@ private TerrainGrid terrain;
         control.setLodCalculator(new DistanceLodCalculator(65, 2.7f));
         terrain.addControl(control);
     }
-    
-    
-    
+
     private void initPhysics() {
-        
-       terrain.addControl(new RigidBodyControl(0));
+        terrain.addControl(new RigidBodyControl(0));
         terrain.addListener(new TerrainGridListener() {
             public void gridMoved(Vector3f newCenter) {
             }
