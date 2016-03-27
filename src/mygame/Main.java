@@ -92,7 +92,7 @@ public class Main extends SimpleApplication {
         flyCam.setEnabled(false);
         camNode = new CameraNode("CamNode", cam);
         camNode.setControlDir(CameraControl.ControlDirection.SpatialToCamera);
-        camNode.setLocalTranslation(new Vector3f(0, 10, -25));
+        camNode.setLocalTranslation(new Vector3f(0, 5, -25));
         camNode.lookAt(tank.tankNode.getLocalTranslation(), Vector3f.UNIT_Y);
         tank.tankNode.attachChild(camNode);
     }
