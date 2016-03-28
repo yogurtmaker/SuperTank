@@ -6,6 +6,7 @@ package mygame;
 
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.control.CharacterControl;
+import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
@@ -15,8 +16,10 @@ import com.jme3.renderer.ViewPort;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Node;
 import com.jme3.scene.control.AbstractControl;
+import java.util.ArrayList;
+import java.util.List;
 
-public class Tank extends AbstractControl implements ActionListener {
+public class Tank implements ActionListener {
 
     Node tankNode;
     Shield shield;
@@ -27,8 +30,10 @@ public class Tank extends AbstractControl implements ActionListener {
     boolean forward = false, backward = false, leftRotate = false, rightRotate = false;
     private float airTime = 0;
     CharacterControl tankControl;
+    Node bulletStartNode;
     Node walkDirNode;
     Main main;
+        List<Bullet> bulletList;
 
     public Tank(Main main) {
         this.main = main;
@@ -36,6 +41,7 @@ public class Tank extends AbstractControl implements ActionListener {
     }
 
     private void initTank() {
+        bulletList = new ArrayList<Bullet>();
         SphereCollisionShape sphere = new SphereCollisionShape(5f);
         tankControl = new CharacterControl(sphere, 0.01f);
         tankControl.setFallSpeed(15f);
@@ -46,21 +52,29 @@ public class Tank extends AbstractControl implements ActionListener {
         tankNode.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
         tankControl.warp(new Vector3f(0, 315f, 0));
 
-        tankNode.addControl(this);
+        bulletStartNode = new Node();
+        bulletStartNode.setLocalTranslation(0, 3, 6);
+        tankNode.attachChild(bulletStartNode);
+        
         shield = new Shield(main);
     }
 
     public void onAction(String binding, boolean isPressed, float tpf) {
+         System.out.println(binding+"!!!!!!!!");
         if (binding.equals("Rotate Left")) {
             if (isPressed) {
                 leftRotate = true;
             } else {
+                Quaternion quan = new Quaternion().fromAngles(0, 0, 0);
+                tankNode.getChild(0).setLocalRotation(quan);
                 leftRotate = false;
             }
         } else if (binding.equals("Rotate Right")) {
             if (isPressed) {
                 rightRotate = true;
             } else {
+                  Quaternion quan = new Quaternion().fromAngles(0, 0, 0);
+                tankNode.getChild(0).setLocalRotation(quan);
                 rightRotate = false;
             }
         } else if (binding.equals("Walk Forward")) {
@@ -76,8 +90,17 @@ public class Tank extends AbstractControl implements ActionListener {
             } else {
                 backward = false;
             }
-        } else if (binding.equals("Jump")) {
-            tankControl.jump();
+        } else if (binding.equals("Shot")&&isPressed) {
+            System.out.println("shot");
+        RigidBodyControl phyBullet = new RigidBodyControl(0.0f);
+        Bullet bullet = new Bullet(main,bulletStartNode.getWorldTranslation(),
+                tankNode.getWorldTranslation());
+        bulletList.add(bullet);
+
+       main.getRootNode().attachChild(bullet.geom);
+        bullet.geom.addControl(phyBullet);
+        main.bulletAppState.getPhysicsSpace().add(phyBullet);
+        
         } else if (binding.equals("Shield")) {
             if (isPressed) {
                 if (!second) {
@@ -92,6 +115,11 @@ public class Tank extends AbstractControl implements ActionListener {
     }
 
     public void updateTank(float tpf) {
+        for(Bullet bullet: bulletList){
+        bullet.update(tpf);
+        }
+        
+        
         Vector3f camDir = main.getCamera().getDirection().mult(0.2f);
         Vector3f camLeft = main.getCamera().getLeft().mult(0.2f);
         Quaternion rotLeft = new Quaternion().fromAngles(0, 0, -FastMath.PI * tpf / 4);
@@ -169,13 +197,5 @@ public class Tank extends AbstractControl implements ActionListener {
 //        }
     }
 
-    @Override
-    protected void controlUpdate(float tpf) {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    protected void controlRender(RenderManager rm, ViewPort vp) {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+  
 }

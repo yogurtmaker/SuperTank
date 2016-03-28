@@ -83,11 +83,12 @@ public class Main extends SimpleApplication {
         inputManager.addMapping("Rotate Right", new KeyTrigger(KeyInput.KEY_RIGHT));
         inputManager.addMapping("Walk Forward", new KeyTrigger(KeyInput.KEY_UP));
         inputManager.addMapping("Walk Backward", new KeyTrigger(KeyInput.KEY_DOWN));
-        inputManager.addMapping("Jump", new KeyTrigger(KeyInput.KEY_SPACE));
+        inputManager.addMapping("Shot", new KeyTrigger(KeyInput.KEY_SPACE));
         inputManager.addMapping("Shield", new KeyTrigger(KeyInput.KEY_T));
         inputManager.addListener(tank, "Rotate Left", "Rotate Right");
         inputManager.addListener(tank, "Walk Forward", "Walk Backward");
-        inputManager.addListener(tank, "Jump", "Shield");
+        inputManager.addListener(tank, "Shot");
+        inputManager.addListener(tank,  "Shield");
     }
 
     private void initCam() {
