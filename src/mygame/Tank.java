@@ -33,6 +33,7 @@ public class Tank implements ActionListener {
     Node bulletStartNode;
     Node walkDirNode;
     Main main;
+     Dust dust;
         List<Bullet> bulletList;
 
     public Tank(Main main) {
@@ -57,6 +58,9 @@ public class Tank implements ActionListener {
         tankNode.attachChild(bulletStartNode);
         
         shield = new Shield(main);
+        dust = new Dust(main);
+        dust.emit.setParticlesPerSec(0f);
+        tankNode.attachChild(dust.emit);
     }
 
     public void onAction(String binding, boolean isPressed, float tpf) {
@@ -80,9 +84,10 @@ public class Tank implements ActionListener {
         } else if (binding.equals("Walk Forward")) {
             if (isPressed) {
                 forward = true;
-
+ dust.emit.setParticlesPerSec(20);
             } else {
                 forward = false;
+                 dust.emit.setParticlesPerSec(0);
             }
         } else if (binding.equals("Walk Backward")) {
             if (isPressed) {

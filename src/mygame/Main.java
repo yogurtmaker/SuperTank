@@ -83,7 +83,7 @@ public class Main extends SimpleApplication {
         inputManager.addMapping("Rotate Right", new KeyTrigger(KeyInput.KEY_RIGHT));
         inputManager.addMapping("Walk Forward", new KeyTrigger(KeyInput.KEY_UP));
         inputManager.addMapping("Walk Backward", new KeyTrigger(KeyInput.KEY_DOWN));
-        inputManager.addMapping("Shot", new KeyTrigger(KeyInput.KEY_SPACE));
+        inputManager.addMapping("Shot", new KeyTrigger(KeyInput.KEY_S));
         inputManager.addMapping("Shield", new KeyTrigger(KeyInput.KEY_T));
         inputManager.addListener(tank, "Rotate Left", "Rotate Right");
         inputManager.addListener(tank, "Walk Forward", "Walk Backward");
