@@ -21,13 +21,17 @@ public class Main extends SimpleApplication {
 
     static Dimension screen;
     BulletAppState bulletAppState;
-    private Node model;
+    private Node modelPlayer;
+    private Node[] modelEnemyTank;
     private CharacterControl player;
+    private CharacterControl[] controlEnemyTank;
     CameraNode camNode;
     boolean rotate = false;
     Ground ground;
     Sky sky;
     Tank tank;
+    Enemy[] enemyTank;
+    final int ENEMYNUMBER = 12;
 
     public static void main(final String[] args) {
         Main app = new Main();
@@ -35,15 +39,14 @@ public class Main extends SimpleApplication {
         app.start();
     }
 
-    
     //commit test
     @Override
     public void simpleInitApp() {
         processor();
         ground = new Ground(this);
         sky = new Sky(this);
-        createCharacter();
         initPhysics();
+        createCharacter();
         initCam();
         setUpKeys();
     }
@@ -62,20 +65,40 @@ public class Main extends SimpleApplication {
     public void simpleUpdate(final float tpf) {
         tank.updateTank(tpf);
         sky.skyUpdate(tpf);
+        for (int i = 0; i < ENEMYNUMBER; i++) {
+            enemyTank[i].updateEnemy(tpf, tank.tankNode.getWorldTranslation());
+        }
     }
 
     private void createCharacter() {
         tank = new Tank(this);
-        model = tank.tankNode;
+        modelPlayer = tank.tankNode;
         player = tank.tankControl;
-        rootNode.attachChild(model);
+        rootNode.attachChild(modelPlayer);
+        createEnemy();
+        bulletAppState.getPhysicsSpace().add(player);
     }
 
     private void initPhysics() {
         bulletAppState = new BulletAppState();
         stateManager.attach(bulletAppState);
 
-        bulletAppState.getPhysicsSpace().add(player);
+    }
+
+    private void createEnemy() {
+        enemyTank = new EnemyTank[ENEMYNUMBER];
+        modelEnemyTank = new Node[ENEMYNUMBER];
+        controlEnemyTank = new CharacterControl[ENEMYNUMBER];
+        for (int i = 0; i < ENEMYNUMBER; i++) {
+            enemyTank[i] = new EnemyTank(this);
+            modelEnemyTank[i] = new Node();
+            modelEnemyTank[i] = enemyTank[i].enemyNode;
+            enemyTank[i].adjust(tank.tankNode.getWorldTranslation());
+            controlEnemyTank[i] = enemyTank[i].enemyControl;
+            bulletAppState.getPhysicsSpace().add(controlEnemyTank[i]);
+            System.out.println(enemyTank[i].enemyNode.getWorldTranslation());
+            rootNode.attachChild(modelEnemyTank[i]);
+        }
     }
 
     private void setUpKeys() {
@@ -88,7 +111,7 @@ public class Main extends SimpleApplication {
         inputManager.addListener(tank, "Rotate Left", "Rotate Right");
         inputManager.addListener(tank, "Walk Forward", "Walk Backward");
         inputManager.addListener(tank, "Shot");
-        inputManager.addListener(tank,  "Shield");
+        inputManager.addListener(tank, "Shield");
     }
 
     private void initCam() {

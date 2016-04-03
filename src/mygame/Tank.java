@@ -33,8 +33,8 @@ public class Tank implements ActionListener {
     Node bulletStartNode;
     Node walkDirNode;
     Main main;
-     Dust dust;
-        List<Bullet> bulletList;
+    Dust dust;
+    List<Bullet> bulletList;
 
     public Tank(Main main) {
         this.main = main;
@@ -49,14 +49,15 @@ public class Tank implements ActionListener {
         tankControl.setGravity(30f);
         tankNode = (Node) main.getAssetManager().loadModel("Models/HoverTank/Tank2.mesh.xml");
         tankNode.addControl(tankControl);
-
+        tankNode.addControl(new RigidBodyControl(0));
         tankNode.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
         tankControl.warp(new Vector3f(0, 315f, 0));
+
 
         bulletStartNode = new Node();
         bulletStartNode.setLocalTranslation(0, 3, 6);
         tankNode.attachChild(bulletStartNode);
-        
+
         shield = new Shield(main);
         dust = new Dust(main);
         dust.emit.setParticlesPerSec(0f);
@@ -64,7 +65,6 @@ public class Tank implements ActionListener {
     }
 
     public void onAction(String binding, boolean isPressed, float tpf) {
-         System.out.println(binding+"!!!!!!!!");
         if (binding.equals("Rotate Left")) {
             if (isPressed) {
                 leftRotate = true;
@@ -77,17 +77,17 @@ public class Tank implements ActionListener {
             if (isPressed) {
                 rightRotate = true;
             } else {
-                  Quaternion quan = new Quaternion().fromAngles(0, 0, 0);
+                Quaternion quan = new Quaternion().fromAngles(0, 0, 0);
                 tankNode.getChild(0).setLocalRotation(quan);
                 rightRotate = false;
             }
         } else if (binding.equals("Walk Forward")) {
             if (isPressed) {
                 forward = true;
- dust.emit.setParticlesPerSec(20);
+                dust.emit.setParticlesPerSec(20);
             } else {
                 forward = false;
-                 dust.emit.setParticlesPerSec(0);
+                dust.emit.setParticlesPerSec(0);
             }
         } else if (binding.equals("Walk Backward")) {
             if (isPressed) {
@@ -95,17 +95,16 @@ public class Tank implements ActionListener {
             } else {
                 backward = false;
             }
-        } else if (binding.equals("Shot")&&isPressed) {
-            System.out.println("shot");
-        RigidBodyControl phyBullet = new RigidBodyControl(0.0f);
-        Bullet bullet = new Bullet(main,bulletStartNode.getWorldTranslation(),
-                tankNode.getWorldTranslation());
-        bulletList.add(bullet);
+        } else if (binding.equals("Shot") && isPressed) {
+            RigidBodyControl phyBullet = new RigidBodyControl(0.0f);
+            Bullet bullet = new Bullet(main, bulletStartNode.getWorldTranslation(),
+                    tankNode.getWorldTranslation());
+            bulletList.add(bullet);
 
-       main.getRootNode().attachChild(bullet.geom);
-        bullet.geom.addControl(phyBullet);
-        main.bulletAppState.getPhysicsSpace().add(phyBullet);
-        
+            main.getRootNode().attachChild(bullet.geom);
+            bullet.geom.addControl(phyBullet);
+            main.bulletAppState.getPhysicsSpace().add(phyBullet);
+
         } else if (binding.equals("Shield")) {
             if (isPressed) {
                 if (!second) {
@@ -120,13 +119,14 @@ public class Tank implements ActionListener {
     }
 
     public void updateTank(float tpf) {
-        for(Bullet bullet: bulletList){
-        bullet.update(tpf);
+        for (Bullet bullet : bulletList) {
+            bullet.update(tpf);
         }
-        
-        
+
+
         Vector3f camDir = main.getCamera().getDirection().mult(0.2f);
         Vector3f camLeft = main.getCamera().getLeft().mult(0.2f);
+        //System.out.println(camLeft);
         Quaternion rotLeft = new Quaternion().fromAngles(0, 0, -FastMath.PI * tpf / 4);
         Quaternion rotRight = new Quaternion().fromAngles(0, 0, FastMath.PI * tpf / 4);
         Quaternion resetRot = new Quaternion().fromAngles(0, 0, 0);
@@ -183,6 +183,7 @@ public class Tank implements ActionListener {
         }
         tankControl.setWalkDirection(walkDirection);
         tankControl.setViewDirection(viewDirection);
+        //System.out.println(walkDirection + "    " + viewDirection);
         if (airTime > 5f) {
             tankControl.setWalkDirection(Vector3f.ZERO);
         }
@@ -201,6 +202,4 @@ public class Tank implements ActionListener {
 //            }
 //        }
     }
-
-  
 }
