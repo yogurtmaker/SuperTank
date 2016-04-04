@@ -26,12 +26,12 @@ public class Main extends SimpleApplication {
     private CharacterControl player;
     private CharacterControl[] controlEnemyTank;
     CameraNode camNode;
-    boolean rotate = false;
     Ground ground;
     Sky sky;
     Tank tank;
     Enemy[] enemyTank;
-    final int ENEMYNUMBER = 12;
+    final int ENEMYNUMBER = 4;
+    boolean rotate = false;
 
     public static void main(final String[] args) {
         Main app = new Main();
@@ -39,7 +39,6 @@ public class Main extends SimpleApplication {
         app.start();
     }
 
-    //commit test
     @Override
     public void simpleInitApp() {
         processor();
@@ -82,7 +81,6 @@ public class Main extends SimpleApplication {
     private void initPhysics() {
         bulletAppState = new BulletAppState();
         stateManager.attach(bulletAppState);
-
     }
 
     private void createEnemy() {

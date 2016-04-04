@@ -23,15 +23,14 @@ import jme3utilities.sky.Updater;
 public class Sky {
 
     private Main main;
-    final private static int shadowMapSize = 4096;
-    final private static int shadowMapSplits = 3;
+    final private static int shadowMapSize = 4096, shadowMapSplits = 3;
     final private TimeOfDay timeOfDay = new TimeOfDay(4.75f);
     private int clockDirection = +1;
-    private AmbientLight ambientLight = null;
-    private DirectionalLight mainLight = null;
     private Node sceneNode = new Node("scene node");
     private SkyControl skyControl = null;
     private Spatial cubeMap = null;
+    private AmbientLight ambientLight = null;
+    private DirectionalLight mainLight = null;
 
     public Sky(Main main) {
         this.main = main;

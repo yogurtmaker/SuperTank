@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package mygame;
 
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
@@ -11,30 +7,23 @@ import com.jme3.input.controls.ActionListener;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
-import com.jme3.renderer.RenderManager;
-import com.jme3.renderer.ViewPort;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Node;
-import com.jme3.scene.control.AbstractControl;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Tank implements ActionListener {
 
-    Node tankNode;
-    Shield shield;
-    boolean force = false;
-    boolean second = false;
-    Vector3f walkDirection = new Vector3f(0, 0, 0);
-    Vector3f viewDirection = new Vector3f(0, 0, 0);
-    boolean forward = false, backward = false, leftRotate = false, rightRotate = false;
-    private float airTime = 0;
-    CharacterControl tankControl;
-    Node bulletStartNode;
-    Node walkDirNode;
     Main main;
-    Dust dust;
+    Node tankNode, bulletStartNode, walkDirNode;
+    CharacterControl tankControl;
     List<Bullet> bulletList;
+    Shield shield;
+    Dust dust;
+    Vector3f walkDirection = new Vector3f(0, 0, 0), viewDirection = new Vector3f(0, 0, 0);
+    boolean force = false, second = false, forward = false, backward = false, 
+            leftRotate = false, rightRotate = false;
+    private float airTime = 0;
 
     public Tank(Main main) {
         this.main = main;
@@ -53,9 +42,8 @@ public class Tank implements ActionListener {
         tankNode.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
         tankControl.warp(new Vector3f(0, 315f, 0));
 
-
         bulletStartNode = new Node();
-        bulletStartNode.setLocalTranslation(0, 3, 6);
+        bulletStartNode.setLocalTranslation(0, 2, 3);
         tankNode.attachChild(bulletStartNode);
 
         shield = new Shield(main);
@@ -99,10 +87,11 @@ public class Tank implements ActionListener {
             RigidBodyControl phyBullet = new RigidBodyControl(0.0f);
             Bullet bullet = new Bullet(main, bulletStartNode.getWorldTranslation(),
                     tankNode.getWorldTranslation());
+            bullet.bullet.setLocalRotation(tankNode.getLocalRotation());
             bulletList.add(bullet);
 
-            main.getRootNode().attachChild(bullet.geom);
-            bullet.geom.addControl(phyBullet);
+            main.getRootNode().attachChild(bullet.bullet);
+            bullet.bullet.addControl(phyBullet);
             main.bulletAppState.getPhysicsSpace().add(phyBullet);
 
         } else if (binding.equals("Shield")) {
@@ -122,11 +111,8 @@ public class Tank implements ActionListener {
         for (Bullet bullet : bulletList) {
             bullet.update(tpf);
         }
-
-
         Vector3f camDir = main.getCamera().getDirection().mult(0.2f);
         Vector3f camLeft = main.getCamera().getLeft().mult(0.2f);
-        //System.out.println(camLeft);
         Quaternion rotLeft = new Quaternion().fromAngles(0, 0, -FastMath.PI * tpf / 4);
         Quaternion rotRight = new Quaternion().fromAngles(0, 0, FastMath.PI * tpf / 4);
         Quaternion resetRot = new Quaternion().fromAngles(0, 0, 0);
@@ -156,7 +142,6 @@ public class Tank implements ActionListener {
             } else {
                 if (tankNode.getChild(0).getLocalRotation() != resetRot) {
                 }
-
             }
         } else if (backward) {
             walkDirection.addLocal(camDir.mult(5f).negate());
@@ -174,7 +159,6 @@ public class Tank implements ActionListener {
                 if (tankNode.getChild(0).getLocalRotation() != resetRot) {
                 }
             }
-
         }
         if (force) {
             tankNode.attachChild(shield.nodeshield);
@@ -183,23 +167,8 @@ public class Tank implements ActionListener {
         }
         tankControl.setWalkDirection(walkDirection);
         tankControl.setViewDirection(viewDirection);
-        //System.out.println(walkDirection + "    " + viewDirection);
         if (airTime > 5f) {
             tankControl.setWalkDirection(Vector3f.ZERO);
         }
-//        if (walkDirection.length() == 0) {
-//            if (!"stand".equals(animationChannel.getAnimationName())) {
-//                animationChannel.setAnim("stand", 1f);
-//            }
-//        } else {
-//            viewDirection.set(camDir);
-//            if (airTime > .3f) {
-//                if (!"stand".equals(animationChannel.getAnimationName())) {
-//                    animationChannel.setAnim("stand");
-//                }
-//            } else if (!"Walk".equals(animationChannel.getAnimationName())) {
-//                animationChannel.setAnim("Walk", 0.7f);
-//            }
-//        }
     }
 }

@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package mygame;
 
 import com.jme3.bullet.control.RigidBodyControl;
@@ -13,24 +9,17 @@ import com.jme3.renderer.ViewPort;
 import com.jme3.scene.control.AbstractControl;
 import java.util.Random;
 
-/**
- *
- * @author alien
- */
 public class EnemyTank extends Enemy {
 
-    int state;
     Random rn;
-    boolean walk = false, attached = false, detached = false, bulletCreated = false;
-    String[] states = {"RotateLeft", "RotateRight", "WalkForward", "WalkBackward", "Shot", "Shield"};
-    final int ROTATETIME = 5, WALKTIME = 5, FORCETIME = 3, SHOOTTIME = 10;
-    int stateTime;
+    String[] states = {"RotateLeft", "RotateRight", "WalkForward", "WalkBackward", "Shot"};
     String binding = states[2];
-    Vector3f bulletPosition, tankPostion, playerDirection, leftDirection, rightDirection;
-    Vector3f velocity;
+    Vector3f bulletPosition, velocity, tankPostion, playerDirection, leftDirection, 
+            rightDirection, view = new Vector3f(0, 0, 0);
+    boolean walk = false, attached = false, detached = false, bulletCreated = false;
     float time = 0;
-    Vector3f view = new Vector3f(0, 0, 0);
-    int frequency;
+    final int ROTATETIME = 5, WALKTIME = 5, FORCETIME = 3, SHOOTTIME = 10;
+    int state, stateTime, frequency;
 
     public EnemyTank(Main main) {
         super(main, "Models/HoverTank/Tank2.mesh.xml");
@@ -141,28 +130,15 @@ public class EnemyTank extends Enemy {
                         RigidBodyControl phyBullet = new RigidBodyControl(0.0f);
                         Bullet bullet = new Bullet(main, bulletStartNode.getWorldTranslation(),
                                 enemyNode.getWorldTranslation());
+                        bullet.bullet.setLocalRotation(enemyNode.getLocalRotation());
                         bulletList.add(bullet);
-                        main.getRootNode().attachChild(bullet.geom);
-                        bullet.geom.addControl(phyBullet);
+                        main.getRootNode().attachChild(bullet.bullet);
+                        bullet.bullet.addControl(phyBullet);
                         main.bulletAppState.getPhysicsSpace().add(phyBullet);
                         bulletCreated = true;
                     }
                 } else {
                     bulletCreated = false;
-                }
-            }
-
-            if (force) {
-                if (!attached) {
-                    enemyNode.attachChild(shield.nodeshield);
-                    attached = true;
-                    detached = false;
-                }
-            } else {
-                if (!detached) {
-                    enemyNode.detachChild(shield.nodeshield);
-                    detached = true;
-                    attached = false;
                 }
             }
         }
@@ -183,7 +159,7 @@ public class EnemyTank extends Enemy {
             time += tpf;
             if ((int) time % stateTime == 0) {
                 stateTime = rn.nextInt(5) + 5;
-                state = rn.nextInt(6);
+                state = rn.nextInt(5);
                 binding = states[state];
             }
             if (binding.equals("RotateLeft") && !rightRotate) {
@@ -196,9 +172,6 @@ public class EnemyTank extends Enemy {
                 backward = true;
             } else if (binding.equals("Shot")) {
                 shoot = true;
-            } else if (binding.equals("Shield")) {
-                force = true;
-
             }
 
             if (leftRotate) {

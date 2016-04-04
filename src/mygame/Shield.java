@@ -20,9 +20,9 @@ import com.shaderblow.forceshield.ForceShieldControl;
 
 public class Shield implements ActionListener {
 
+    private Main main;
     Node nodeshield;
     private ForceShieldControl forceShieldControl;
-    private Main main;
 
     public Shield(Main main) {
         this.main = main;
@@ -56,7 +56,7 @@ public class Shield implements ActionListener {
                 nodeshield.attachChild(electricity);
             }
         }
-
+        
         this.forceShieldControl = new ForceShieldControl(forceMaterial);
         shield.addControl(this.forceShieldControl);
         this.forceShieldControl.setEffectSize(6f);

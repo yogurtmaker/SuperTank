@@ -1,37 +1,25 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package mygame;
 
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.control.CharacterControl;
+import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Node;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author alien
- */
 public abstract class Enemy {
 
-    Node enemyNode;
-    Shield shield;
-    boolean force = false;
-    boolean second = false;
-    Vector3f walkDirection = new Vector3f(0, 0, 0);
-    Vector3f viewDirection = new Vector3f(0, 0, 0);
-    boolean forward = false, backward = false, leftRotate = false, rightRotate = false, attack = false, shoot = false;
-    protected float airTime = 0;
-    CharacterControl enemyControl;
-    Node bulletStartNode, leftNode, leftNode1, rightNode, rightNode1;
-    Node walkDirNode;
     Main main;
-    Dust dust;
+    Node enemyNode, bulletStartNode, walkDirNode, leftNode, leftNode1, rightNode, rightNode1;
+    CharacterControl enemyControl;
     List<Bullet> bulletList;
+    Dust dust;
+    Vector3f walkDirection = new Vector3f(0, 0, 0), viewDirection = new Vector3f(0, 0, 0);
+    boolean force = false, second = false, forward = false, backward = false, 
+            leftRotate = false, rightRotate = false, attack = false, shoot = false;
+    protected float airTime = 0;
 
     public Enemy(Main main, String enemyType) {
         this.main = main;
@@ -49,7 +37,7 @@ public abstract class Enemy {
 
         enemyNode.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
         bulletStartNode = new Node();
-        bulletStartNode.setLocalTranslation(0, 3, 6);
+        bulletStartNode.setLocalTranslation(0, 2, 3);
         enemyNode.attachChild(bulletStartNode);
 
         leftNode = new Node();
@@ -68,16 +56,11 @@ public abstract class Enemy {
         rightNode1.setLocalTranslation(-0.08f, 0, 6);
         enemyNode.attachChild(rightNode1);
         
-        shield = new Shield(main);
         dust = new Dust(main);
         dust.emit.setParticlesPerSec(0f);
         enemyNode.attachChild(dust.emit);
     }
 
-    // -------------------------------------------------------------------------
-    // Abstract Methods
-    // adjustment: sets the specific local translation and scaling for a certain
-    // mesh
     protected abstract void adjust(Vector3f palyerPos);
 
     protected abstract void updateEnemy(float tpf, Vector3f playerPos);
