@@ -1,6 +1,5 @@
 package mygame;
 
-
 import com.jme3.effect.ParticleEmitter;
 import com.jme3.effect.ParticleMesh;
 import com.jme3.material.Material;

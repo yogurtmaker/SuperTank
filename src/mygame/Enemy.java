@@ -2,7 +2,6 @@ package mygame;
 
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.control.CharacterControl;
-import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Node;
@@ -17,7 +16,7 @@ public abstract class Enemy {
     List<Bullet> bulletList;
     Dust dust;
     Vector3f walkDirection = new Vector3f(0, 0, 0), viewDirection = new Vector3f(0, 0, 0);
-    boolean force = false, second = false, forward = false, backward = false, 
+    boolean force = false, second = false, forward = false, backward = false,
             leftRotate = false, rightRotate = false, attack = false, shoot = false;
     protected float airTime = 0;
 
@@ -55,7 +54,7 @@ public abstract class Enemy {
         rightNode1 = new Node();
         rightNode1.setLocalTranslation(-0.08f, 0, 6);
         enemyNode.attachChild(rightNode1);
-        
+
         dust = new Dust(main);
         dust.emit.setParticlesPerSec(0f);
         enemyNode.attachChild(dust.emit);

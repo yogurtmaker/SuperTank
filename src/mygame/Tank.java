@@ -21,9 +21,10 @@ public class Tank implements ActionListener {
     Shield shield;
     Dust dust;
     Vector3f walkDirection = new Vector3f(0, 0, 0), viewDirection = new Vector3f(0, 0, 0);
-    boolean force = false, second = false, forward = false, backward = false, 
+    boolean force = false, second = false, forward = false, backward = false,
             leftRotate = false, rightRotate = false;
     private float airTime = 0;
+    private int resetTime;
 
     public Tank(Main main) {
         this.main = main;
@@ -40,7 +41,7 @@ public class Tank implements ActionListener {
         tankNode.addControl(tankControl);
         tankNode.addControl(new RigidBodyControl(0));
         tankNode.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
-        tankControl.warp(new Vector3f(0, 315f, 0));
+        tankControl.warp(new Vector3f(0, 320f, 0));
 
         bulletStartNode = new Node();
         bulletStartNode.setLocalTranslation(0, 2, 3);
@@ -55,18 +56,16 @@ public class Tank implements ActionListener {
     public void onAction(String binding, boolean isPressed, float tpf) {
         if (binding.equals("Rotate Left")) {
             if (isPressed) {
+                resetTime = 90;
                 leftRotate = true;
             } else {
-                Quaternion quan = new Quaternion().fromAngles(0, 0, 0);
-                tankNode.getChild(0).setLocalRotation(quan);
                 leftRotate = false;
             }
         } else if (binding.equals("Rotate Right")) {
             if (isPressed) {
+                resetTime = 100;
                 rightRotate = true;
             } else {
-                Quaternion quan = new Quaternion().fromAngles(0, 0, 0);
-                tankNode.getChild(0).setLocalRotation(quan);
                 rightRotate = false;
             }
         } else if (binding.equals("Walk Forward")) {
@@ -93,7 +92,6 @@ public class Tank implements ActionListener {
             main.getRootNode().attachChild(bullet.bullet);
             bullet.bullet.addControl(phyBullet);
             main.bulletAppState.getPhysicsSpace().add(phyBullet);
-
         } else if (binding.equals("Shield")) {
             if (isPressed) {
                 if (!second) {
@@ -140,7 +138,14 @@ public class Tank implements ActionListener {
                     tankNode.getChild(0).rotate(rotRight);
                 }
             } else {
-                if (tankNode.getChild(0).getLocalRotation() != resetRot) {
+                if (tankNode.getChild(0).getLocalRotation().getZ() > resetRot.getZ() && resetTime > 0) {
+                    resetTime--;
+                    tankNode.getChild(0).rotate(rotLeft);
+                } else if (tankNode.getChild(0).getLocalRotation().getZ() < resetRot.getZ() && resetTime > 0) {
+                    resetTime--;
+                    tankNode.getChild(0).rotate(rotRight);
+                } else if (resetTime <= 0) {
+                    tankNode.getChild(0).setLocalRotation(resetRot);
                 }
             }
         } else if (backward) {
@@ -156,8 +161,25 @@ public class Tank implements ActionListener {
                     tankNode.getChild(0).rotate(rotRight);
                 }
             } else {
-                if (tankNode.getChild(0).getLocalRotation() != resetRot) {
+                if (tankNode.getChild(0).getLocalRotation().getZ() > resetRot.getZ() && resetTime > 0) {
+                    resetTime--;
+                    tankNode.getChild(0).rotate(rotLeft);
+                } else if (tankNode.getChild(0).getLocalRotation().getZ() < resetRot.getZ() && resetTime > 0) {
+                    resetTime--;
+                    tankNode.getChild(0).rotate(rotRight);
+                } else if (resetTime <= 0) {
+                    tankNode.getChild(0).setLocalRotation(resetRot);
                 }
+            }
+        } else {
+            if (tankNode.getChild(0).getLocalRotation().getZ() > resetRot.getZ() && resetTime > 0) {
+                resetTime--;
+                tankNode.getChild(0).rotate(rotLeft);
+            } else if (tankNode.getChild(0).getLocalRotation().getZ() < resetRot.getZ() && resetTime > 0) {
+                resetTime--;
+                tankNode.getChild(0).rotate(rotRight);
+            } else if (resetTime <= 0) {
+                tankNode.getChild(0).setLocalRotation(resetRot);
             }
         }
         if (force) {
