@@ -35,8 +35,8 @@ public class TestTankDissolve extends SimpleApplication {
         this.DSParamsBurn = new Vector2f(0, 0);
 
         tank = assetManager.loadModel("Models/HoverTank/Tank2.mesh.xml");
-        final Material mat = this.assetManager
-                .loadMaterial("Materials/Active/MultiplyColor_Base.j3m");
+       final  Material mat = this.assetManager
+                .loadMaterial("Materials/Active/MultiplyColor_1.j3m");
         tank.setMaterial(mat);
 
         tank.setLocalTranslation(new Vector3f(0, 0, 0));

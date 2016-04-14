@@ -1,6 +1,7 @@
 package mygame;
 
 import com.jme3.bullet.control.RigidBodyControl;
+import com.jme3.material.Material;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
@@ -16,13 +17,13 @@ public class EnemyTank extends Enemy {
     String binding = states[2];
     Vector3f bulletPosition, velocity, tankPostion, playerDirection, leftDirection,
             rightDirection, view = new Vector3f(0, 0, 0);
-    boolean walk = false, attached = false, detached = false, bulletCreated = false;
-    float time = 0;
-    final int ROTATETIME = 5, WALKTIME = 5, FORCETIME = 3, SHOOTTIME = 10;
+    boolean walk = false, attached = false, detached = false, bulletCreated = false, track = false;
+    float time = 0, time2 = 0;
+    final int ROTATETIME = 5, WALKTIME = 5, FORCETIME = 3, SHOOTTIME = 10, TRACKDISTANCE = 500, ATTACKDISTANCE = 200;
     int state, stateTime, frequency, resetTime;
 
-    public EnemyTank(Main main) {
-        super(main, "Models/HoverTank/Tank2.mesh.xml");
+    public EnemyTank(Main main, Material mat) {
+        super(main, "Models/HoverTank/Tank2.mesh.xml", mat);
         initStuff();
     }
 
@@ -34,6 +35,74 @@ public class EnemyTank extends Enemy {
         dust = new Dust(main);
         dust.emit.setParticlesPerSec(20f);
         enemyNode.attachChild(dust.emit);
+    }
+
+    protected void aimPlaer(Quaternion rotLeft, Quaternion rotRight, Quaternion limLeft, Quaternion limRight, Quaternion rotReset) {
+        leftDirection = leftNode1.getWorldTranslation().subtract(tankPostion);
+        rightDirection = rightNode1.getWorldTranslation().subtract(tankPostion);
+        if (leftDirection.normalize().subtract(playerDirection.normalize()).length() < 0.05
+                || rightDirection.normalize().subtract(playerDirection.normalize()).length() < 0.05) {
+            if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
+                resetTime--;
+                enemyNode.getChild(0).rotate(rotLeft);
+            } else if (enemyNode.getChild(0).getLocalRotation().getZ() < rotReset.getZ() && resetTime > 0) {
+                resetTime--;
+                enemyNode.getChild(0).rotate(rotRight);
+            } else if (resetTime <= 0) {
+                enemyNode.getChild(0).setLocalRotation(rotReset);
+            }
+        } else if (leftDirection.subtract(playerDirection).length() < rightDirection.subtract(playerDirection).length()) {
+            resetTime = 90;
+            enemyControl.setViewDirection(leftDirection);
+            if (enemyNode.getChild(0).getLocalRotation().getZ() >= limLeft.getZ()) {
+                enemyNode.getChild(0).rotate(rotLeft);
+            }
+        } else if (leftDirection.subtract(playerDirection).length() > rightDirection.subtract(playerDirection).length()) {
+            resetTime = 100;
+            enemyControl.setViewDirection(rightDirection);
+            if (enemyNode.getChild(0).getLocalRotation().getZ() <= limRight.getZ()) {
+                enemyNode.getChild(0).rotate(rotRight);
+            }
+        } else {
+            if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
+                resetTime--;
+                enemyNode.getChild(0).rotate(rotLeft);
+            } else if (enemyNode.getChild(0).getLocalRotation().getZ() < rotReset.getZ() && resetTime > 0) {
+                resetTime--;
+                enemyNode.getChild(0).rotate(rotRight);
+            } else if (resetTime <= 0) {
+                enemyNode.getChild(0).setLocalRotation(rotReset);
+            }
+        }
+        enemyControl.setWalkDirection(velocity.mult(0.1f));
+    }
+
+    protected void move(Quaternion rotLeft, Quaternion rotRight, Quaternion limLeft, Quaternion limRight, Quaternion rotReset) {
+        if (leftRotate) {
+            resetTime = 90;
+            leftDirection = leftNode.getWorldTranslation().subtract(tankPostion);
+            enemyControl.setViewDirection(leftDirection);
+            if (enemyNode.getChild(0).getLocalRotation().getZ() >= limLeft.getZ()) {
+                enemyNode.getChild(0).rotate(rotLeft);
+            }
+        } else if (rightRotate) {
+            resetTime = 100;
+            rightDirection = rightNode.getWorldTranslation().subtract(tankPostion);
+            enemyControl.setViewDirection(rightDirection);
+            if (enemyNode.getChild(0).getLocalRotation().getZ() <= limRight.getZ()) {
+                enemyNode.getChild(0).rotate(rotRight);
+            }
+        } else {
+            if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
+                resetTime--;
+                enemyNode.getChild(0).rotate(rotLeft);
+            } else if (enemyNode.getChild(0).getLocalRotation().getZ() < rotReset.getZ() && resetTime > 0) {
+                resetTime--;
+                enemyNode.getChild(0).rotate(rotRight);
+            } else if (resetTime <= 0) {
+                enemyNode.getChild(0).setLocalRotation(rotReset);
+            }
+        }
     }
 
     @Override
@@ -51,7 +120,12 @@ public class EnemyTank extends Enemy {
         time += tpf;
         tankPostion = enemyNode.getWorldTranslation();
         playerDirection = playerPos.subtract(tankPostion);
-        if (playerDirection.length() < 200) {
+        if (playerDirection.length() > TRACKDISTANCE) {
+            track = true;
+        } else {
+            track = false;
+        }
+        if (playerDirection.length() < ATTACKDISTANCE) {
             attack = true;
         } else {
             attack = false;
@@ -63,90 +137,47 @@ public class EnemyTank extends Enemy {
             for (Bullet bullet : bulletList) {
                 bullet.update(tpf);
             }
-            if (attack) {
-                shoot = true;
+            if (track) {
+                aimPlaer(rotLeft, rotRight, limLeft, limRight, rotReset);
+            } else if (attack) {
                 leftDirection = leftNode1.getWorldTranslation().subtract(tankPostion);
                 rightDirection = rightNode1.getWorldTranslation().subtract(tankPostion);
-                if (leftDirection.subtract(playerDirection).length() < rightDirection.subtract(playerDirection).length()) {
-                    enemyControl.setViewDirection(leftDirection);
-                    if (enemyNode.getChild(0).getLocalRotation().getZ() >= limLeft.getZ()) {
-                        enemyNode.getChild(0).rotate(rotLeft);
-                    }
+                if (leftDirection.normalize().subtract(playerDirection.normalize()).length() < 0.05
+                        || rightDirection.normalize().subtract(playerDirection.normalize()).length() < 0.05) {
+                    shoot = true;
                 } else {
-                    enemyControl.setViewDirection(rightDirection);
-                    if (enemyNode.getChild(0).getLocalRotation().getZ() <= limRight.getZ()) {
-                        enemyNode.getChild(0).rotate(rotRight);
-                    }
+                    shoot = false;
                 }
-                enemyControl.setWalkDirection(velocity.mult(0.1f));
+                aimPlaer(rotLeft, rotRight, limLeft, limRight, rotReset);
             } else if (forward) {
                 dust.emit.setParticlesPerSec(20);
                 enemyControl.setWalkDirection(velocity.mult(0.1f));
-                if (leftRotate) {
-                    resetTime = 90;
-                    leftDirection = leftNode.getWorldTranslation().subtract(tankPostion);
-                    enemyControl.setViewDirection(leftDirection);
-                    if (enemyNode.getChild(0).getLocalRotation().getZ() >= limLeft.getZ()) {
-                        enemyNode.getChild(0).rotate(rotLeft);
-                    }
-                } else if (rightRotate) {
-                    resetTime = 90;
-                    rightDirection = rightNode.getWorldTranslation().subtract(tankPostion);
-                    enemyControl.setViewDirection(rightDirection);
-                    if (enemyNode.getChild(0).getLocalRotation().getZ() <= limRight.getZ()) {
-                        enemyNode.getChild(0).rotate(rotRight);
-                    }
-                } else {
-                    if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
-                        resetTime--;
-                        enemyNode.getChild(0).rotate(rotLeft);
-                    } else if (enemyNode.getChild(0).getLocalRotation().getZ() < rotReset.getZ() && resetTime > 0) {
-                        resetTime--;
-                        enemyNode.getChild(0).rotate(rotRight);
-                    } else if (resetTime <= 0) {
-                        enemyNode.getChild(0).setLocalRotation(rotReset);
-                    }
-                }
+                move(rotLeft, rotRight, limLeft, limRight, rotReset);
             } else if (backward) {
                 enemyControl.setWalkDirection(velocity.mult(0.1f).negate());
-                if (leftRotate) {
-                    resetTime = 90;
-                    leftDirection = leftNode.getWorldTranslation().subtract(tankPostion);
-                    enemyControl.setViewDirection(leftDirection);
-                    if (enemyNode.getChild(0).getLocalRotation().getZ() >= limLeft.getZ()) {
-                        enemyNode.getChild(0).rotate(rotLeft);
-                    }
-                } else if (rightRotate) {
-                    resetTime = 90;
-                    rightDirection = rightNode.getWorldTranslation().subtract(tankPostion);
-                    enemyControl.setViewDirection(rightDirection);
-                    if (enemyNode.getChild(0).getLocalRotation().getZ() <= limRight.getZ()) {
-                        enemyNode.getChild(0).rotate(rotRight);
-                    }
-                } else {
-                    if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
-                        resetTime--;
-                        enemyNode.getChild(0).rotate(rotLeft);
-                    } else if (enemyNode.getChild(0).getLocalRotation().getZ() < rotReset.getZ() && resetTime > 0) {
-                        resetTime--;
-                        enemyNode.getChild(0).rotate(rotRight);
-                    } else if (resetTime <= 0) {
-                        enemyNode.getChild(0).setLocalRotation(rotReset);
-                    }
+                move(rotLeft, rotRight, limLeft, limRight, rotReset);
+            } else {
+                if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
+                    resetTime--;
+                    enemyNode.getChild(0).rotate(rotLeft);
+                } else if (enemyNode.getChild(0).getLocalRotation().getZ() < rotReset.getZ() && resetTime > 0) {
+                    resetTime--;
+                    enemyNode.getChild(0).rotate(rotRight);
+                } else if (resetTime <= 0) {
+                    enemyNode.getChild(0).setLocalRotation(rotReset);
                 }
             }
             if (shoot) {
-                if ((int) time % frequency == 0) {
+                float passTime = time - time2;
+                if (passTime > frequency) {
                     if (!bulletCreated) {
-                        RigidBodyControl phyBullet = new RigidBodyControl(0.0f);
                         Bullet bullet = new Bullet(main, bulletStartNode.getWorldTranslation(),
                                 enemyNode.getWorldTranslation());
                         bullet.bullet.setLocalRotation(enemyNode.getLocalRotation());
                         bulletList.add(bullet);
                         main.getRootNode().attachChild(bullet.bullet);
-                        bullet.bullet.addControl(phyBullet);
-                        main.bulletAppState.getPhysicsSpace().add(phyBullet);
                         bulletCreated = true;
+                        time2 = time;
                     }
                 } else {
                     bulletCreated = false;

@@ -1,10 +1,13 @@
 package mygame;
 
 import com.jme3.app.SimpleApplication;
+import com.jme3.bounding.BoundingVolume;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.control.CharacterControl;
+import com.jme3.collision.CollisionResults;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
 import com.jme3.post.FilterPostProcessor;
@@ -32,6 +35,7 @@ public class Main extends SimpleApplication {
     Enemy[] enemyTank;
     final int ENEMYNUMBER = 4;
     boolean rotate = false;
+    Material mats[];
 
     public static void main(final String[] args) {
         Main app = new Main();
@@ -44,6 +48,7 @@ public class Main extends SimpleApplication {
         processor();
         ground = new Ground(this);
         sky = new Sky(this);
+        initMat();
         initPhysics();
         createCharacter();
         initCam();
@@ -66,6 +71,67 @@ public class Main extends SimpleApplication {
         sky.skyUpdate(tpf);
         for (int i = 0; i < ENEMYNUMBER; i++) {
             enemyTank[i].updateEnemy(tpf, tank.tankNode.getWorldTranslation());
+            if (enemyTank[i].shoot = false) {
+                System.out.println("123");
+            }
+        }
+        collisionTest();
+        for (int i = 0; i < ENEMYNUMBER; i++) {
+            for (int j = 0; j < enemyTank[i].bulletList.size(); j++) {
+                if (enemyTank[i].bulletList.get(j).bullet.getWorldTranslation().subtract(tank.tankNode.getWorldTranslation()).length()
+                        > 2000) {
+                    rootNode.detachChild(enemyTank[i].bulletList.get(j).bullet);
+                    enemyTank[i].bulletList.remove(enemyTank[i].bulletList.get(j));
+                }
+            }
+        }
+
+        for (int j = 0; j < tank.bulletList.size(); j++) {
+            if (tank.bulletList.get(j).bullet.getWorldTranslation().subtract(tank.tankNode.getWorldTranslation()).length()
+                    > 2000) {
+                rootNode.detachChild(tank.bulletList.get(j).bullet);
+                tank.bulletList.remove(tank.bulletList.get(j));
+            }
+        }
+
+    }
+
+    public void collisionTest() {
+        CollisionResults crs = new CollisionResults();
+        for (int i = 0; i < ENEMYNUMBER; i++) {
+            for (int j = 0; j < enemyTank[i].bulletList.size(); j++) {
+                BoundingVolume bv = enemyTank[i].bulletList.get(j).bullet.getWorldBound();
+                tank.shield.nodeshield.collideWith(bv, crs);
+                if (crs.size() > 0) {
+                    if (crs.getClosestCollision() != null) {
+                        tank.shield.forceShieldControl.registerHit(enemyTank[i].bulletList.get(j).bullet.getWorldTranslation());
+                    }
+                    rootNode.detachChild(enemyTank[i].bulletList.get(j).bullet);
+                    enemyTank[i].bulletList.remove(enemyTank[i].bulletList.get(j));
+                    crs.clear();
+                } else {
+                    tank.tankNode.collideWith(bv, crs);
+                    if (crs.size() > 0) {
+                        System.out.println("Hit player!");
+                        rootNode.detachChild(enemyTank[i].bulletList.get(j).bullet);
+                        enemyTank[i].bulletList.remove(enemyTank[i].bulletList.get(j));
+                        crs.clear();
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < ENEMYNUMBER; i++) {
+            for (int j = 0; j < tank.bulletList.size(); j++) {
+                BoundingVolume bv = tank.bulletList.get(j).bullet.getWorldBound();
+                enemyTank[i].enemyNode.collideWith(bv, crs);
+                if (crs.size() > 0) {
+                    System.out.println("Hit enemy!");
+                    rootNode.detachChild(tank.bulletList.get(j).bullet);
+                    tank.bulletList.remove(tank.bulletList.get(j));
+                    crs.clear();
+                }
+            }
         }
     }
 
@@ -88,13 +154,12 @@ public class Main extends SimpleApplication {
         modelEnemyTank = new Node[ENEMYNUMBER];
         controlEnemyTank = new CharacterControl[ENEMYNUMBER];
         for (int i = 0; i < ENEMYNUMBER; i++) {
-            enemyTank[i] = new EnemyTank(this);
+            enemyTank[i] = new EnemyTank(this, mats[i]);
             modelEnemyTank[i] = new Node();
             modelEnemyTank[i] = enemyTank[i].enemyNode;
             enemyTank[i].adjust(tank.tankNode.getWorldTranslation());
             controlEnemyTank[i] = enemyTank[i].enemyControl;
             bulletAppState.getPhysicsSpace().add(controlEnemyTank[i]);
-            System.out.println(enemyTank[i].enemyNode.getWorldTranslation());
             rootNode.attachChild(modelEnemyTank[i]);
         }
     }
@@ -119,6 +184,18 @@ public class Main extends SimpleApplication {
         camNode.setLocalTranslation(new Vector3f(0, 5, -25));
         camNode.lookAt(tank.tankNode.getLocalTranslation(), Vector3f.UNIT_Y);
         tank.tankNode.attachChild(camNode);
+    }
+
+    public void initMat() {
+        mats = new Material[4];
+        mats[0] = assetManager
+                .loadMaterial("Materials/Active/MultiplyColor_Base.j3m");
+        mats[1] = assetManager
+                .loadMaterial("Materials/Active/MultiplyColor_2.j3m");
+        mats[2] = assetManager
+                .loadMaterial("Materials/Active/MultiplyColor_2.j3m");
+        mats[3] = assetManager
+                .loadMaterial("Materials/Active/MultiplyColor_Base.j3m");
     }
 
     private void processor() {

@@ -2,15 +2,20 @@ package mygame;
 
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.control.CharacterControl;
+import com.jme3.bullet.control.RigidBodyControl;
+import com.jme3.material.Material;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.queue.RenderQueue;
+import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
+import com.jme3.scene.shape.Sphere;
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Enemy {
 
     Main main;
+    Geometry collisionTest;
     Node enemyNode, bulletStartNode, walkDirNode, leftNode, leftNode1, rightNode, rightNode1;
     CharacterControl enemyControl;
     List<Bullet> bulletList;
@@ -20,19 +25,25 @@ public abstract class Enemy {
             leftRotate = false, rightRotate = false, attack = false, shoot = false;
     protected float airTime = 0;
 
-    public Enemy(Main main, String enemyType) {
+    public Enemy(Main main, String enemyType, Material mat) {
         this.main = main;
-        initEnemy(enemyType);
+        initEnemy(enemyType, mat);
     }
 
-    private void initEnemy(String enemyType) {
+    private void initEnemy(String enemyType, Material mat) {
+        Sphere sphereLarge = new Sphere(32, 32, 1.5f);
+        collisionTest = new Geometry("Shiny", sphereLarge);
+        Material mat1 = new Material(main.getAssetManager(), "Common/MatDefs/Light/Lighting.j3md");
+        collisionTest.setMaterial(mat1);
         bulletList = new ArrayList<Bullet>();
         SphereCollisionShape sphere = new SphereCollisionShape(5f);
         enemyControl = new CharacterControl(sphere, 0.01f);
         enemyControl.setFallSpeed(15f);
         enemyControl.setGravity(30f);
         enemyNode = (Node) main.getAssetManager().loadModel(enemyType);
+        enemyNode.setMaterial(mat);
         enemyNode.addControl(enemyControl);
+        enemyNode.attachChild(collisionTest);
 
         enemyNode.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
         bulletStartNode = new Node();
@@ -58,6 +69,15 @@ public abstract class Enemy {
         dust = new Dust(main);
         dust.emit.setParticlesPerSec(0f);
         enemyNode.attachChild(dust.emit);
+        //initPhysics();
+    }
+
+    private void initPhysics() {
+        RigidBodyControl phyEnemy = new RigidBodyControl(0.0f);
+        collisionTest.addControl(phyEnemy);
+        //phyEnemy.setKinematic(true);
+        main.bulletAppState.getPhysicsSpace().add(phyEnemy);
+        //geomMarble.getUserData(null).
     }
 
     protected abstract void adjust(Vector3f palyerPos);

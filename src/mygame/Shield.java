@@ -22,7 +22,7 @@ public class Shield implements ActionListener {
 
     private Main main;
     Node nodeshield;
-    private ForceShieldControl forceShieldControl;
+    public ForceShieldControl forceShieldControl;
 
     public Shield(Main main) {
         this.main = main;
@@ -32,7 +32,7 @@ public class Shield implements ActionListener {
     private void initShield() {
         nodeshield = new Node();
         nodeshield.setShadowMode(RenderQueue.ShadowMode.Off);
-        final Sphere sphere = new Sphere(30, 30, 6.5f);
+        final Sphere sphere = new Sphere(80, 80, 8.5f);
         final Geometry shield = new Geometry("forceshield", sphere);
         nodeshield.attachChild(shield);
         shield.setQueueBucket(Bucket.Transparent);
@@ -79,5 +79,9 @@ public class Shield implements ActionListener {
                 this.forceShieldControl.registerHit(crs.getClosestCollision().getContactPoint());
             }
         }
+    }
+    
+    public void force(CollisionResults crs){
+        this.forceShieldControl.registerHit(crs.getClosestCollision().getContactPoint());
     }
 }
