@@ -18,13 +18,14 @@ import java.util.Random;
 public class EnemyTank extends Enemy {
 
     Random rn;
-    String[] states = {"RotateLeft", "RotateRight", "WalkForward", "WalkBackward", "Shot", "Stop"};
+    String[] states = {"RotateLeft", "RotateRight", "WalkForward", "WalkBackward", "Shoot", "Stop"};
     String binding = states[5];
     Vector3f bulletPosition, velocity, tankPostion, playerDirection, leftDirection,
             rightDirection, view = new Vector3f(0, 0, 0);
     public boolean walk = false, attached = false, detached = false, bulletCreated = false, track = false;
     float time = 0, time2 = 0, time3 = 0;
-    final int ROTATETIME = 5, WALKTIME = 5, FORCETIME = 3, SHOOTTIME = 10, TRACKDISTANCE = 500, ATTACKDISTANCE = 200;
+    final int ROTATETIME = 5, WALKTIME = 5, FORCETIME = 3, SHOOTTIME = 10, TRACKDISTANCE = 500, ATTACKDISTANCE = 200,
+            STOPTIME = 3;
     float stateTime, frequency, resetTime;
     int state;
 
@@ -61,15 +62,7 @@ public class EnemyTank extends Enemy {
         rightDirection = rightNode1.getWorldTranslation().subtract(tankPostion);
         if (leftDirection.normalize().subtract(playerDirection.normalize()).length() < 0.04
                 || rightDirection.normalize().subtract(playerDirection.normalize()).length() < 0.04) {
-            if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
-                resetTime--;
-                enemyNode.getChild(0).rotate(rotLeft);
-            } else if (enemyNode.getChild(0).getLocalRotation().getZ() < rotReset.getZ() && resetTime > 0) {
-                resetTime--;
-                enemyNode.getChild(0).rotate(rotRight);
-            } else if (resetTime <= 0) {
-                enemyNode.getChild(0).setLocalRotation(rotReset);
-            }
+            rotateBack(rotLeft, rotRight, rotReset);
         } else if (leftDirection.subtract(playerDirection).length() < rightDirection.subtract(playerDirection).length()) {
             resetTime = 90;
             enemyControl.setViewDirection(leftDirection);
@@ -83,17 +76,21 @@ public class EnemyTank extends Enemy {
                 enemyNode.getChild(0).rotate(rotRight);
             }
         } else {
-            if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
-                resetTime--;
-                enemyNode.getChild(0).rotate(rotLeft);
-            } else if (enemyNode.getChild(0).getLocalRotation().getZ() < rotReset.getZ() && resetTime > 0) {
-                resetTime--;
-                enemyNode.getChild(0).rotate(rotRight);
-            } else if (resetTime <= 0) {
-                enemyNode.getChild(0).setLocalRotation(rotReset);
-            }
+            rotateBack(rotLeft, rotRight, rotReset);
         }
         enemyControl.setWalkDirection(velocity.mult(0.2f));
+    }
+
+    protected void rotateBack(Quaternion rotLeft, Quaternion rotRight, Quaternion rotReset) {
+        if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
+            resetTime--;
+            enemyNode.getChild(0).rotate(rotLeft);
+        } else if (enemyNode.getChild(0).getLocalRotation().getZ() < rotReset.getZ() && resetTime > 0) {
+            resetTime--;
+            enemyNode.getChild(0).rotate(rotRight);
+        } else if (resetTime <= 0) {
+            enemyNode.getChild(0).setLocalRotation(rotReset);
+        }
     }
 
     protected void move(Quaternion rotLeft, Quaternion rotRight, Quaternion limLeft, Quaternion limRight, Quaternion rotReset) {
@@ -112,15 +109,7 @@ public class EnemyTank extends Enemy {
                 enemyNode.getChild(0).rotate(rotRight);
             }
         } else {
-            if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
-                resetTime--;
-                enemyNode.getChild(0).rotate(rotLeft);
-            } else if (enemyNode.getChild(0).getLocalRotation().getZ() < rotReset.getZ() && resetTime > 0) {
-                resetTime--;
-                enemyNode.getChild(0).rotate(rotRight);
-            } else if (resetTime <= 0) {
-                enemyNode.getChild(0).setLocalRotation(rotReset);
-            }
+            rotateBack(rotLeft, rotRight, rotReset);
         }
     }
 
@@ -185,16 +174,11 @@ public class EnemyTank extends Enemy {
                 } else if (backward) {
                     enemyControl.setWalkDirection(velocity.mult(0.1f).negate());
                     move(rotLeft, rotRight, limLeft, limRight, rotReset);
+                } else if (stop) {
+                    enemyControl.setWalkDirection(Vector3f.ZERO);
+                    rotateBack(rotLeft, rotRight, rotReset);
                 } else {
-                    if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
-                        resetTime--;
-                        enemyNode.getChild(0).rotate(rotLeft);
-                    } else if (enemyNode.getChild(0).getLocalRotation().getZ() < rotReset.getZ() && resetTime > 0) {
-                        resetTime--;
-                        enemyNode.getChild(0).rotate(rotRight);
-                    } else if (resetTime <= 0) {
-                        enemyNode.getChild(0).setLocalRotation(rotReset);
-                    }
+                    rotateBack(rotLeft, rotRight, rotReset);
                 }
                 if (shoot) {
                     float passTime = time - time2;
@@ -224,6 +208,7 @@ public class EnemyTank extends Enemy {
         float walkBackwardTime = 0;
         float forceTime = 0;
         float shootTime = 0;
+        float stopTime = 0;
         float time = 0;
 
         @Override
@@ -244,8 +229,10 @@ public class EnemyTank extends Enemy {
                 forward = true;
             } else if (binding.equals("WalkBackward") && !forward) {
                 backward = true;
-            } else if (binding.equals("Shot")) {
+            } else if (binding.equals("Shoot")) {
                 shoot = true;
+            } else if (binding.equals("Stop")) {
+                stop = true;
             }
 
             if (leftRotate) {
@@ -285,6 +272,13 @@ public class EnemyTank extends Enemy {
                 if (forceTime > FORCETIME) {
                     force = false;
                     forceTime = 0;
+                }
+            }
+            if (stop) {
+                stopTime += tpf;
+                if (stopTime > STOPTIME) {
+                    stop = false;
+                    stopTime = 0;
                 }
             }
             if (shoot) {
