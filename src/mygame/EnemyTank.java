@@ -2,25 +2,31 @@ package mygame;
 
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.material.Material;
+import com.jme3.material.RenderState;
+import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.RenderManager;
 import com.jme3.renderer.ViewPort;
+import com.jme3.renderer.queue.RenderQueue;
+import com.jme3.scene.Geometry;
 import com.jme3.scene.control.AbstractControl;
+import com.jme3.scene.shape.Box;
 import java.util.Random;
 
 public class EnemyTank extends Enemy {
 
     Random rn;
-    String[] states = {"RotateLeft", "RotateRight", "WalkForward", "WalkBackward", "Shot"};
-    String binding = states[2];
+    String[] states = {"RotateLeft", "RotateRight", "WalkForward", "WalkBackward", "Shot", "Stop"};
+    String binding = states[5];
     Vector3f bulletPosition, velocity, tankPostion, playerDirection, leftDirection,
             rightDirection, view = new Vector3f(0, 0, 0);
-    boolean walk = false, attached = false, detached = false, bulletCreated = false, track = false;
-    float time = 0, time2 = 0;
+    public boolean walk = false, attached = false, detached = false, bulletCreated = false, track = false;
+    float time = 0, time2 = 0, time3 = 0;
     final int ROTATETIME = 5, WALKTIME = 5, FORCETIME = 3, SHOOTTIME = 10, TRACKDISTANCE = 500, ATTACKDISTANCE = 200;
-    int state, stateTime, frequency, resetTime;
+    float stateTime, frequency, resetTime;
+    int state;
 
     public EnemyTank(Main main, Material mat) {
         super(main, "Models/HoverTank/Tank2.mesh.xml", mat);
@@ -28,10 +34,23 @@ public class EnemyTank extends Enemy {
     }
 
     void initStuff() {
+        //health bar
+        Box box = new Box(2.5f, 0.3f, 0.3f);
+        bar = new Geometry("bar", box);
+        Material matBar = new Material(main.getAssetManager(), "Common/MatDefs/Misc/Unshaded.j3md");
+        matBar.setColor("Color", new ColorRGBA(1f, 0f, 0f, 0.2f));
+        matBar.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        bar.setMaterial(matBar);
+        bar.setLocalTranslation(0, 3.3f, 2);
+        bar.setQueueBucket(RenderQueue.Bucket.Transparent);
+        enemyNode.attachChild(bar);
+
         rn = new Random();
         enemyNode.addControl(new tankControl());
-        stateTime = rn.nextInt(5) + 5;
-        frequency = rn.nextInt(3) + 1;
+        stateTime = rn.nextFloat() * 5 + 5;
+        System.out.println(stateTime);
+        frequency = rn.nextFloat() * 2 + 1;
+        System.out.println(frequency);
         dust = new Dust(main);
         dust.emit.setParticlesPerSec(20f);
         enemyNode.attachChild(dust.emit);
@@ -40,8 +59,8 @@ public class EnemyTank extends Enemy {
     protected void aimPlaer(Quaternion rotLeft, Quaternion rotRight, Quaternion limLeft, Quaternion limRight, Quaternion rotReset) {
         leftDirection = leftNode1.getWorldTranslation().subtract(tankPostion);
         rightDirection = rightNode1.getWorldTranslation().subtract(tankPostion);
-        if (leftDirection.normalize().subtract(playerDirection.normalize()).length() < 0.05
-                || rightDirection.normalize().subtract(playerDirection.normalize()).length() < 0.05) {
+        if (leftDirection.normalize().subtract(playerDirection.normalize()).length() < 0.04
+                || rightDirection.normalize().subtract(playerDirection.normalize()).length() < 0.04) {
             if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
                 resetTime--;
                 enemyNode.getChild(0).rotate(rotLeft);
@@ -74,7 +93,7 @@ public class EnemyTank extends Enemy {
                 enemyNode.getChild(0).setLocalRotation(rotReset);
             }
         }
-        enemyControl.setWalkDirection(velocity.mult(0.1f));
+        enemyControl.setWalkDirection(velocity.mult(0.2f));
     }
 
     protected void move(Quaternion rotLeft, Quaternion rotRight, Quaternion limLeft, Quaternion limRight, Quaternion rotReset) {
@@ -118,6 +137,9 @@ public class EnemyTank extends Enemy {
         Quaternion limLeft = new Quaternion().fromAngles(0, 0, -FastMath.PI / 4);
         Quaternion limRight = new Quaternion().fromAngles(0, 0, FastMath.PI / 4);
         time += tpf;
+        for (Bullet bullet : bulletList) {
+            bullet.update(tpf);
+        }
         tankPostion = enemyNode.getWorldTranslation();
         playerDirection = playerPos.subtract(tankPostion);
         if (playerDirection.length() > TRACKDISTANCE) {
@@ -125,62 +147,70 @@ public class EnemyTank extends Enemy {
         } else {
             track = false;
         }
+
         if (playerDirection.length() < ATTACKDISTANCE) {
             attack = true;
         } else {
             attack = false;
         }
+
+        if (hitPoints <= 0) {
+            death = true;
+        } else {
+            death = false;
+        }
         bulletPosition = bulletStartNode.getWorldTranslation();
         velocity = bulletPosition.subtract(tankPostion)
                 .subtract(new Vector3f(0, 3, 0)).mult(1.01f);
-        if (time > 15) {
-            for (Bullet bullet : bulletList) {
-                bullet.update(tpf);
-            }
-            if (track) {
-                aimPlaer(rotLeft, rotRight, limLeft, limRight, rotReset);
-            } else if (attack) {
-                leftDirection = leftNode1.getWorldTranslation().subtract(tankPostion);
-                rightDirection = rightNode1.getWorldTranslation().subtract(tankPostion);
-                if (leftDirection.normalize().subtract(playerDirection.normalize()).length() < 0.05
-                        || rightDirection.normalize().subtract(playerDirection.normalize()).length() < 0.05) {
-                    shoot = true;
-                } else {
-                    shoot = false;
-                }
-                aimPlaer(rotLeft, rotRight, limLeft, limRight, rotReset);
-            } else if (forward) {
-                dust.emit.setParticlesPerSec(20);
-                enemyControl.setWalkDirection(velocity.mult(0.1f));
-                move(rotLeft, rotRight, limLeft, limRight, rotReset);
-            } else if (backward) {
-                enemyControl.setWalkDirection(velocity.mult(0.1f).negate());
-                move(rotLeft, rotRight, limLeft, limRight, rotReset);
-            } else {
-                if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
-                    resetTime--;
-                    enemyNode.getChild(0).rotate(rotLeft);
-                } else if (enemyNode.getChild(0).getLocalRotation().getZ() < rotReset.getZ() && resetTime > 0) {
-                    resetTime--;
-                    enemyNode.getChild(0).rotate(rotRight);
-                } else if (resetTime <= 0) {
-                    enemyNode.getChild(0).setLocalRotation(rotReset);
-                }
-            }
-            if (shoot) {
-                float passTime = time - time2;
-                if (passTime > frequency) {
-                    if (!bulletCreated) {
-                        Bullet bullet = new Bullet(main, bulletStartNode.getWorldTranslation(),
-                                enemyNode.getWorldTranslation());
-                        bullet.bullet.setLocalRotation(enemyNode.getLocalRotation());
-                        bulletList.add(bullet);
-                        main.getRootNode().attachChild(bullet.bullet);
-                        bulletCreated = true;
-                        time2 = time;
+        if (!death) {
+            if (time > 15) {
+                if (collideWithPlayer || collideWithEnemy) {
+                    enemyControl.setWalkDirection(velocity.mult(0.3f).negate());
+                } else if (track) {
+                    aimPlaer(rotLeft, rotRight, limLeft, limRight, rotReset);
+                } else if (attack) {
+                    leftDirection = leftNode1.getWorldTranslation().subtract(tankPostion);
+                    rightDirection = rightNode1.getWorldTranslation().subtract(tankPostion);
+                    if (leftDirection.normalize().subtract(playerDirection.normalize()).length() < 0.04
+                            || rightDirection.normalize().subtract(playerDirection.normalize()).length() < 0.04) {
+                        shoot = true;
+                    } else {
+                        shoot = false;
                     }
+                    aimPlaer(rotLeft, rotRight, limLeft, limRight, rotReset);
+                } else if (forward) {
+                    dust.emit.setParticlesPerSec(20);
+                    enemyControl.setWalkDirection(velocity.mult(0.1f));
+                    move(rotLeft, rotRight, limLeft, limRight, rotReset);
+                } else if (backward) {
+                    enemyControl.setWalkDirection(velocity.mult(0.1f).negate());
+                    move(rotLeft, rotRight, limLeft, limRight, rotReset);
                 } else {
-                    bulletCreated = false;
+                    if (enemyNode.getChild(0).getLocalRotation().getZ() > rotReset.getZ() && resetTime > 0) {
+                        resetTime--;
+                        enemyNode.getChild(0).rotate(rotLeft);
+                    } else if (enemyNode.getChild(0).getLocalRotation().getZ() < rotReset.getZ() && resetTime > 0) {
+                        resetTime--;
+                        enemyNode.getChild(0).rotate(rotRight);
+                    } else if (resetTime <= 0) {
+                        enemyNode.getChild(0).setLocalRotation(rotReset);
+                    }
+                }
+                if (shoot) {
+                    float passTime = time - time2;
+                    if (passTime > frequency) {
+                        if (!bulletCreated) {
+                            Bullet bullet = new Bullet(main, bulletStartNode.getWorldTranslation(),
+                                    enemyNode.getWorldTranslation());
+                            bullet.bullet.setLocalRotation(enemyNode.getLocalRotation());
+                            bulletList.add(bullet);
+                            main.getRootNode().attachChild(bullet.bullet);
+                            bulletCreated = true;
+                            time2 = time;
+                        }
+                    } else {
+                        bulletCreated = false;
+                    }
                 }
             }
         }
@@ -199,10 +229,12 @@ public class EnemyTank extends Enemy {
         @Override
         protected void controlUpdate(float tpf) {
             time += tpf;
-            if ((int) time % stateTime == 0) {
-                stateTime = rn.nextInt(5) + 5;
-                state = rn.nextInt(5);
+            if (time - time3 >= stateTime) {
+                stateTime = rn.nextFloat() * 5 + 5;
+                frequency = rn.nextFloat() * 2 + 1;
+                state = rn.nextInt(states.length);
                 binding = states[state];
+                time3 = time;
             }
             if (binding.equals("RotateLeft") && !rightRotate) {
                 leftRotate = true;

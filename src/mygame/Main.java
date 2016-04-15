@@ -5,6 +5,8 @@ import com.jme3.bounding.BoundingVolume;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.control.CharacterControl;
 import com.jme3.collision.CollisionResults;
+import com.jme3.font.BitmapFont;
+import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.material.Material;
@@ -22,6 +24,7 @@ import java.awt.Toolkit;
 
 public class Main extends SimpleApplication {
 
+    BitmapText[] texts;
     static Dimension screen;
     BulletAppState bulletAppState;
     private Node modelPlayer;
@@ -36,6 +39,10 @@ public class Main extends SimpleApplication {
     final int ENEMYNUMBER = 4;
     boolean rotate = false;
     Material mats[];
+    Vector3f playerBarPos = new Vector3f(820, 550, 0), gameEndPos = new Vector3f(520, 750, 0),
+            numOfBulletRemainPos = new Vector3f(20, 800, 0);
+    int enemyRemain = 4;
+    final int BULLETDAMAGE = 20;
 
     public static void main(final String[] args) {
         Main app = new Main();
@@ -46,6 +53,7 @@ public class Main extends SimpleApplication {
     @Override
     public void simpleInitApp() {
         processor();
+        initText();
         ground = new Ground(this);
         sky = new Sky(this);
         initMat();
@@ -67,13 +75,11 @@ public class Main extends SimpleApplication {
 
     @Override
     public void simpleUpdate(final float tpf) {
-        tank.updateTank(tpf);
+        texts[3].setText("Bullet remain:" + tank.numberOfBulletRemain);
+        tank.updateTank(tpf, texts[1]);
         sky.skyUpdate(tpf);
         for (int i = 0; i < ENEMYNUMBER; i++) {
             enemyTank[i].updateEnemy(tpf, tank.tankNode.getWorldTranslation());
-            if (enemyTank[i].shoot = false) {
-                System.out.println("123");
-            }
         }
         collisionTest();
         for (int i = 0; i < ENEMYNUMBER; i++) {
@@ -98,21 +104,36 @@ public class Main extends SimpleApplication {
 
     public void collisionTest() {
         CollisionResults crs = new CollisionResults();
+
+        //Collision between enemy's bullet and player and player's shield
         for (int i = 0; i < ENEMYNUMBER; i++) {
             for (int j = 0; j < enemyTank[i].bulletList.size(); j++) {
                 BoundingVolume bv = enemyTank[i].bulletList.get(j).bullet.getWorldBound();
-                tank.shield.nodeshield.collideWith(bv, crs);
+                tank.shield.nodeshield.getChild(0).collideWith(bv, crs);
                 if (crs.size() > 0) {
-                    if (crs.getClosestCollision() != null) {
-                        tank.shield.forceShieldControl.registerHit(enemyTank[i].bulletList.get(j).bullet.getWorldTranslation());
+                    tank.shield.forceShieldControl.registerHit(enemyTank[i].bulletList.get(j).bullet.getWorldTranslation());
+                    tank.shield.hitPoints -= BULLETDAMAGE;
+                    if (tank.shield.hitPoints <= 0) {
+                        tank.tankNode.detachChild(tank.shield.nodeshield);
+                        texts[1].setLocalTranslation(0, 0, 0);
+                        tank.shield.hitPoints = 0;
                     }
+                    tank.shield.bar.setLocalScale((float) (tank.shield.hitPoints / 100.0), 1, 1);
                     rootNode.detachChild(enemyTank[i].bulletList.get(j).bullet);
                     enemyTank[i].bulletList.remove(enemyTank[i].bulletList.get(j));
                     crs.clear();
                 } else {
-                    tank.tankNode.collideWith(bv, crs);
+                    tank.tankNode.getChild(0).collideWith(bv, crs);
                     if (crs.size() > 0) {
                         System.out.println("Hit player!");
+                        tank.hitPoints -= BULLETDAMAGE;
+                        if (tank.hitPoints <= 0) {
+                            //game over
+                            texts[2].setText("Sorry You lose!");
+                            texts[2].setLocalTranslation(gameEndPos);
+                            tank.hitPoints = 0;
+                        }
+                        tank.bar.setLocalScale((float) (tank.hitPoints / 100.0), 1, 1);
                         rootNode.detachChild(enemyTank[i].bulletList.get(j).bullet);
                         enemyTank[i].bulletList.remove(enemyTank[i].bulletList.get(j));
                         crs.clear();
@@ -121,18 +142,86 @@ public class Main extends SimpleApplication {
             }
         }
 
+
+        //Collision between enemy and player
+        for (int i = 0; i < ENEMYNUMBER; i++) {
+            BoundingVolume bv = tank.tankNode.getChild(0).getWorldBound();
+            enemyTank[i].enemyNode.getChild(0).collideWith(bv, crs);
+            if (crs.size() > 0) {
+                enemyTank[i].collideWithPlayer = true;
+                crs.clear();
+            } else {
+                bv = tank.shield.nodeshield.getChild(0).getWorldBound();
+                enemyTank[i].enemyNode.getChild(0).collideWith(bv, crs);
+                if (crs.size() > 0) {
+                    enemyTank[i].collideWithPlayer = true;
+                    crs.clear();
+                } else {
+                    enemyTank[i].collideWithPlayer = false;
+                }
+            }
+        }
+
+        //Collision between enemies
+        for (int i = 0; i < ENEMYNUMBER; i++) {
+            for (int j = 0; j < ENEMYNUMBER && j != i; j++) {
+                BoundingVolume bv = enemyTank[j].enemyNode.getChild(0).getWorldBound();
+                enemyTank[i].enemyNode.getChild(0).collideWith(bv, crs);
+                if (crs.size() > 0) {
+                    enemyTank[i].collideWithEnemy = true;
+                    crs.clear();
+                } else {
+                    enemyTank[i].collideWithEnemy  = false;
+                }
+            }
+        }
+
+
+        //Collision between player's bullet and enemy
         for (int i = 0; i < ENEMYNUMBER; i++) {
             for (int j = 0; j < tank.bulletList.size(); j++) {
                 BoundingVolume bv = tank.bulletList.get(j).bullet.getWorldBound();
-                enemyTank[i].enemyNode.collideWith(bv, crs);
+                enemyTank[i].enemyNode.getChild(0).collideWith(bv, crs);
                 if (crs.size() > 0) {
                     System.out.println("Hit enemy!");
+                    enemyTank[i].hitPoints -= BULLETDAMAGE;
+                    if (enemyTank[i].hitPoints <= 0) {
+                        //Enemy tank is destroied
+                        enemyRemain--;
+                        rootNode.detachChild(enemyTank[i].enemyNode);
+                        enemyTank[i].enemyNode.setLocalTranslation(-100, -100, -100);//move them away
+                        enemyTank[i].hitPoints = 0;
+                        if (enemyRemain == 0) {
+                            //game over
+                            texts[2].setText("Congratulations! You win the game!");
+                            texts[2].setLocalTranslation(gameEndPos);
+                        }
+                    }
+                    enemyTank[i].bar.setLocalScale((float) (enemyTank[i].hitPoints / 100.0), 1, 1);
                     rootNode.detachChild(tank.bulletList.get(j).bullet);
                     tank.bulletList.remove(tank.bulletList.get(j));
                     crs.clear();
                 }
             }
         }
+        texts[0].setText("HP:" + (int) tank.hitPoints);
+        texts[0].setLocalTranslation(playerBarPos);
+    }
+
+    public void initText() {
+        BitmapFont bmf = assetManager.loadFont("Interface/Fonts/Console.fnt");
+        texts = new BitmapText[6];
+        //texts[0] for palyer's bar, texts[1] for shield's bar, texts[2] for enemy's bar
+        //texts[3] for remain number of bullet
+        for (int j = 0; j < 6; j++) {
+            texts[j] = new BitmapText(bmf);
+            texts[j].setSize(bmf.getCharSet().getRenderedSize() * 2);
+            texts[j].setColor(ColorRGBA.Red);
+            getGuiNode().attachChild(texts[j]);
+        }
+        texts[1].setColor(ColorRGBA.Blue);
+        texts[3].setColor(ColorRGBA.Black);
+        texts[3].setLocalTranslation(numOfBulletRemainPos);
     }
 
     private void createCharacter() {

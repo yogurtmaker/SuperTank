@@ -15,6 +15,7 @@ import com.jme3.renderer.queue.RenderQueue.Bucket;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
+import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
 import com.shaderblow.forceshield.ForceShieldControl;
 
@@ -23,6 +24,8 @@ public class Shield implements ActionListener {
     private Main main;
     Node nodeshield;
     public ForceShieldControl forceShieldControl;
+    Geometry bar;
+    float hitPoints = 100;
 
     public Shield(Main main) {
         this.main = main;
@@ -32,7 +35,7 @@ public class Shield implements ActionListener {
     private void initShield() {
         nodeshield = new Node();
         nodeshield.setShadowMode(RenderQueue.ShadowMode.Off);
-        final Sphere sphere = new Sphere(80, 80, 8.5f);
+        final Sphere sphere = new Sphere(60, 60, 6.5f);
         final Geometry shield = new Geometry("forceshield", sphere);
         nodeshield.attachChild(shield);
         shield.setQueueBucket(Bucket.Transparent);
@@ -56,7 +59,7 @@ public class Shield implements ActionListener {
                 nodeshield.attachChild(electricity);
             }
         }
-        
+
         this.forceShieldControl = new ForceShieldControl(forceMaterial);
         shield.addControl(this.forceShieldControl);
         this.forceShieldControl.setEffectSize(6f);
@@ -65,6 +68,17 @@ public class Shield implements ActionListener {
         this.forceShieldControl.setMaxTime(0.5f);
         main.getInputManager().addMapping("FIRE", new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
         main.getInputManager().addListener(this, "FIRE");
+
+        //health bar
+        Box box = new Box(2.5f, 0.3f, 0.3f);
+        bar = new Geometry("bar", box);
+        Material matBar = new Material(main.getAssetManager(), "Common/MatDefs/Misc/Unshaded.j3md");
+        matBar.setColor("Color", new ColorRGBA(0f, 0f, 0.8f, 0.2f));
+        matBar.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        bar.setMaterial(matBar);
+        bar.setLocalTranslation(0, 7.3f, 2);
+        bar.setQueueBucket(RenderQueue.Bucket.Transparent);
+        nodeshield.attachChild(bar);
     }
 
     @Override
@@ -80,8 +94,8 @@ public class Shield implements ActionListener {
             }
         }
     }
-    
-    public void force(CollisionResults crs){
+
+    public void force(CollisionResults crs) {
         this.forceShieldControl.registerHit(crs.getClosestCollision().getContactPoint());
     }
 }

@@ -14,6 +14,8 @@ import java.util.List;
 
 public abstract class Enemy {
 
+    Geometry bar;
+    public float hitPoints = 100;
     Main main;
     Geometry collisionTest;
     Node enemyNode, bulletStartNode, walkDirNode, leftNode, leftNode1, rightNode, rightNode1;
@@ -22,7 +24,8 @@ public abstract class Enemy {
     Dust dust;
     Vector3f walkDirection = new Vector3f(0, 0, 0), viewDirection = new Vector3f(0, 0, 0);
     boolean force = false, second = false, forward = false, backward = false,
-            leftRotate = false, rightRotate = false, attack = false, shoot = false;
+            leftRotate = false, rightRotate = false, attack = false, shoot = false, 
+            death = false, stop = false, collideWithPlayer = false, collideWithEnemy = false;
     protected float airTime = 0;
 
     public Enemy(Main main, String enemyType, Material mat) {
